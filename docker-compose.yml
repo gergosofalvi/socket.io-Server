@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    command: redis-server --requirepass mysecurepassword
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  socketio-server01:
+    build:
+      context: .
+    container_name: socketio-server01
+    ports:
+      - "3155:3155"
+    environment:
+      - NODE_ENV=prod
+      - REDIS_URL=redis://redis:6379
+      - REDIS_PASSWORD=mysecurepassword
+      - AUTH_TOKEN=your-auth-token
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  socketio-server02:
+    build:
+      context: .
+    container_name: socketio-server02
+    ports:
+      - "3156:3155"
+    environment:
+      - NODE_ENV=prod
+      - REDIS_URL=redis://redis:6379
+      - REDIS_PASSWORD=mysecurepassword
+      - AUTH_TOKEN=your-auth-token
+    depends_on:
+      - redis
+    restart: unless-stopped

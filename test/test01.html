@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Channel Test</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        header {
+            background-color: #0078d7;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        .container {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        input, textarea, button {
+            display: block;
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        button {
+            background-color: #0078d7;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #005bb5;
+        }
+        #messages {
+            list-style-type: none;
+            padding: 0;
+        }
+        #messages li {
+            margin-bottom: 15px;
+            background-color: #f4f4f4;
+            border-left: 4px solid #0078d7;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Socket.IO Channel Test</h1>
+    </header>
+    <div class="container">
+        <!-- Feliratkozás -->
+        <h1>Join a Channel</h1>
+        <input id="channel" placeholder="Enter channel name (e.g., my-channel)" />
+        <button id="join-channel">Join Channel</button>
+        <p id="subscribed-info"></p>
+
+        <!-- Üzenet küldése -->
+        <h1>Send a Message</h1>
+        <textarea id="data" rows="10" cols="50" placeholder="Enter event data (JSON)">
+{
+    "type": "insert",
+    "order": {
+        "id": 123,
+        "uuid": "example-uuid",
+        "code": "O.EXAMPLE",
+        "created_at": "2024-12-12T00:00:00Z",
+        "st_name": "Example Shop",
+        "items": [
+            {
+                "id": 1,
+                "name": "Example Item",
+                "quantity": 2,
+                "price": 100
+            }
+        ]
+    },
+    "isNew": true
+}
+        </textarea>
+        <button id="send-event">Send Event</button>
+
+        <!-- Üzenetek megjelenítése -->
+        <h1>Messages</h1>
+        <ul id="messages"></ul>
+    </div>
+
+    <script>
+        // Socket.IO szerverhez csatlakozás tokennel
+        const socket = io('http://localhost:3155', {
+            auth: {
+                token: 'your-auth-token', // Cseréld ki a tényleges tokenre
+            },
+        });
+
+        let subscribedChannel = ''; // Aktuális csatorna tárolása
+
+        // Csatornára feliratkozás
+        document.getElementById('join-channel').addEventListener('click', () => {
+            const channel = document.getElementById('channel').value.trim();
+
+            if (!channel) {
+                alert('Please enter a valid channel name.');
+                return;
+            }
+
+            // Előző csatornáról leiratkozás
+            if (subscribedChannel) {
+                socket.emit('leave-channel', subscribedChannel);
+                console.log(`Left channel: ${subscribedChannel}`);
+            }
+
+            subscribedChannel = channel; // Új csatorna beállítása
+            socket.emit('join-channel', channel);
+            document.getElementById('subscribed-info').textContent = `Subscribed to channel: ${channel}`;
+            console.log(`Joined channel: ${channel}`);
+        });
+
+        // Üzenet küldése csatornára
+        document.getElementById('send-event').addEventListener('click', () => {
+            const data = document.getElementById('data').value;
+
+            if (!data) {
+                alert('Please enter valid JSON data.');
+                return;
+            }
+
+            try {
+                const jsonData = JSON.parse(data);
+                socket.emit('send-event', { channel: subscribedChannel, data: jsonData });
+                console.log(`Sent data to channel: ${subscribedChannel}`);
+            } catch (error) {
+                alert('Invalid JSON format. Please fix the data.');
+            }
+        });
+
+        // Üzenetek fogadása
+        socket.onAny((event, data) => {
+            console.log(`Received event: ${event}`, data);
+
+            const li = document.createElement('li');
+            const pre = document.createElement('pre');
+            pre.textContent = `Event: ${event}\nData:\n${JSON.stringify(data, null, 2)}`;
+            li.appendChild(pre);
+            const messagesList = document.getElementById('messages');
+            messagesList.insertBefore(li, messagesList.firstChild);
+        });
+    </script>
+</body>
+</html>
