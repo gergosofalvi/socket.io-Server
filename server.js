@@ -24,7 +24,7 @@ const subClient = pubClient.duplicate();
             origin: '*',
             methods: ['GET', 'POST'],
         },
-        adapter: createAdapter(pubClient, subClient), // Redis adapter setup
+        adapter: createAdapter(pubClient, subClient),
     });
 
     app.use(express.json());
@@ -57,6 +57,30 @@ const subClient = pubClient.duplicate();
         socket.on('disconnect', () => {
             console.log(`User disconnected: ${socket.id}`);
         });
+    });
+
+    // POST endpoint to send an event to a channel
+    app.post('/send-event', (req, res) => {
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const token = authHeader.split(' ')[1];
+        if (token !== process.env.AUTH_TOKEN) {
+            return res.status(401).json({ error: 'Invalid token' });
+        }
+
+        const { channel, data } = req.body;
+
+        if (!channel || !data) {
+            return res.status(400).json({ error: 'Missing channel or data' });
+        }
+
+        io.to(channel).emit('message', data);
+        console.log(`Message sent to channel ${channel}:`, data);
+        return res.status(200).json({ success: true, message: 'Message sent' });
     });
 
     // Start server
