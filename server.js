@@ -50,12 +50,12 @@ const subClient = pubClient.duplicate();
         // Send event to a specific channel
         socket.on('send-event', ({ channel, data }) => {
             io.to(channel).emit('message', data);
-            console.log(`Message sent to ${channel}:`, data);
+            //console.log(`Message sent to ${channel}:`);
         });
 
         // Handle disconnection
         socket.on('disconnect', () => {
-            console.log(`User disconnected: ${socket.id}`);
+            //console.log(`User disconnected: ${socket.id}`);
         });
     });
 
@@ -79,7 +79,7 @@ const subClient = pubClient.duplicate();
         }
 
         io.to(channel).emit('message', data);
-        console.log(`Message sent to channel ${channel}:`, data);
+        //console.log(`Message sent to channel ${channel}:`);
         return res.status(200).json({ success: true, message: 'Message sent' });
     });
 
